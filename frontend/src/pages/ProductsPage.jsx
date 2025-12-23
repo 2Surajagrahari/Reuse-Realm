@@ -1,17 +1,16 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'; // Added useSearchParams
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronLeft, ChevronRight, X, Inbox, SlidersHorizontal, Loader2, ArrowRight } from 'lucide-react';
 import { productListRequest, productListSuccess, productListFail } from '../features/products/productSlice';
 import api from '../api/AxiosAPI';
 
 // --- Configuration ---
-// Updated categories for a general second-hand store
 const CATEGORIES = [
-  'All', 
-  'Electronics', 
-  'Furniture', 
+  'All',
+  'Electronics',
+  'Furniture',
   'Vehicles',
   'Fashion',
   'Hobbies'
@@ -34,7 +33,7 @@ const ProductGridSkeleton = () => (
   </div>
 );
 
-// 2. Product Card (Inline for Style Consistency)
+// 2. Product Card
 const ProductCard = ({ product }) => (
   <Link to={`/products/${product._id}`} className="group block">
     <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 rounded-sm mb-5">
@@ -47,26 +46,23 @@ const ProductCard = ({ product }) => (
         />
       ) : (
         <div className="h-full w-full flex items-center justify-center text-stone-300 bg-stone-50">
-            <span>No Image</span>
+          <span>No Image</span>
         </div>
       )}
-      
-      {/* Overlay Badge - Changed text color to Teal for consistency */}
+
       <div className="absolute top-3 left-3">
-         <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest font-bold px-2 py-1 text-teal-800">
-            {product.category}
-         </span>
+        <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest font-bold px-2 py-1 text-teal-800">
+          {product.category}
+        </span>
       </div>
 
-      {/* Hover Action */}
       <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent">
-         <p className="text-white text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2">
-            View Listing <ArrowRight size={12} />
-         </p>
+        <p className="text-white text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2">
+          View Listing <ArrowRight size={12} />
+        </p>
       </div>
     </div>
     <div className="text-center">
-      {/* Changed hover text to Teal */}
       <h3 className="text-lg font-marcellus text-stone-900 group-hover:text-teal-700 transition-colors leading-tight mb-1 truncate px-2">
         {product.name}
       </h3>
@@ -81,7 +77,7 @@ const ProductCard = ({ product }) => (
 const ErrorMessage = ({ message }) => (
   <div className="flex flex-col items-center justify-center text-center bg-red-50 text-red-800 p-12 rounded-sm border border-red-100">
     <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600">
-        <X size={24} />
+      <X size={24} />
     </div>
     <h3 className="font-marcellus text-xl mb-2">Something went wrong</h3>
     <p className="text-sm font-light">{message}</p>
@@ -93,12 +89,11 @@ const NoResults = ({ resetFilters }) => (
     <Inbox className="mx-auto h-12 w-12 text-stone-300 mb-4" strokeWidth={1} />
     <h3 className="font-marcellus text-2xl text-stone-800 mb-2">No Products Found</h3>
     <p className="text-stone-500 font-light mb-6">We couldn't find any matches for your search.</p>
-    <button 
-        onClick={resetFilters}
-        // Changed hover colors to Teal
-        className="text-xs font-bold uppercase tracking-widest border-b border-stone-900 pb-1 hover:text-teal-700 hover:border-teal-700 transition-colors"
+    <button
+      onClick={resetFilters}
+      className="text-xs font-bold uppercase tracking-widest border-b border-stone-900 pb-1 hover:text-teal-700 hover:border-teal-700 transition-colors"
     >
-        Clear All Filters
+      Clear All Filters
     </button>
   </div>
 );
@@ -108,12 +103,12 @@ const MobileFilterSidebar = ({ isOpen, onClose, activeCategory, onSelectCategory
   <AnimatePresence>
     {isOpen && (
       <>
-        <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            onClick={onClose} 
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-40 lg:hidden" 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-40 lg:hidden"
         />
         <motion.div
           initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
@@ -129,12 +124,10 @@ const MobileFilterSidebar = ({ isOpen, onClose, activeCategory, onSelectCategory
               <li key={cat}>
                 <button
                   onClick={() => { onSelectCategory(cat); onClose(); }}
-                  className={`w-full text-left text-sm uppercase tracking-widest py-2 transition-colors ${
-                    activeCategory === cat 
-                        // Changed active state colors to Teal
-                        ? 'font-bold text-teal-700 border-l-2 border-teal-700 pl-4' 
-                        : 'text-stone-500 hover:text-stone-900'
-                  }`}
+                  className={`w-full text-left text-sm uppercase tracking-widest py-2 transition-colors ${activeCategory === cat
+                      ? 'font-bold text-teal-700 border-l-2 border-teal-700 pl-4'
+                      : 'text-stone-500 hover:text-stone-900'
+                    }`}
                 >
                   {cat}
                 </button>
@@ -152,32 +145,30 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center mt-16 gap-2">
-      <button 
-        onClick={() => onPageChange(currentPage - 1)} 
-        disabled={currentPage === 1} 
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
         className="w-10 h-10 flex items-center justify-center border border-stone-200 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-30 disabled:hover:bg-transparent rounded-full transition-colors"
       >
         <ChevronLeft size={16} />
       </button>
-      
+
       {[...Array(totalPages).keys()].map(page => (
-        <button 
-            key={page + 1} 
-            onClick={() => onPageChange(page + 1)} 
-            className={`w-10 h-10 rounded-full text-xs font-bold transition-colors ${
-                currentPage === page + 1 
-                    // Changed active background to Teal
-                    ? 'bg-teal-700 text-white' 
-                    : 'text-stone-600 hover:bg-stone-100'
+        <button
+          key={page + 1}
+          onClick={() => onPageChange(page + 1)}
+          className={`w-10 h-10 rounded-full text-xs font-bold transition-colors ${currentPage === page + 1
+              ? 'bg-teal-700 text-white'
+              : 'text-stone-600 hover:bg-stone-100'
             }`}
         >
-            {page + 1}
+          {page + 1}
         </button>
       ))}
-      
-      <button 
-        onClick={() => onPageChange(currentPage + 1)} 
-        disabled={currentPage === totalPages} 
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
         className="w-10 h-10 flex items-center justify-center border border-stone-200 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-30 disabled:hover:bg-transparent rounded-full transition-colors"
       >
         <ChevronRight size={16} />
@@ -191,6 +182,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 const ProductsPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  // NEW: Hook to read URL query params (e.g., ?keyword=iphone)
+  const [searchParams, setSearchParams] = useSearchParams();
   const { products, loading, error, pages } = useSelector((state) => state.products);
   const { categoryName } = useParams();
 
@@ -200,7 +193,6 @@ const ProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeCategory, setActiveCategory] = useState('All');
 
-  // Format category from URL to readable text
   const formatCategoryFromParam = (param) => {
     if (!param) return 'All';
     return param.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -217,91 +209,104 @@ const ProductsPage = () => {
     }
   }, [dispatch]);
 
+  // NEW: Combined Effect to handle both Category URL params AND Search Query params
   useEffect(() => {
-    const categoryFromURL = formatCategoryFromParam(categoryName);
-    setActiveCategory(categoryFromURL);
+    // 1. Check for search keyword in URL (from HomePage search)
+    const keywordFromUrl = searchParams.get('keyword');
+
+    // 2. Check for category in URL path
+    const categoryFromPath = formatCategoryFromParam(categoryName);
+
+    if (keywordFromUrl) {
+      // If searching, prioritize the keyword and reset category
+      setKeyword(keywordFromUrl);
+      setSearchInput(keywordFromUrl);
+      setActiveCategory('All');
+    } else {
+      // If not searching, use the category path
+      setKeyword('');
+      setSearchInput('');
+      setActiveCategory(categoryFromPath);
+    }
+
     setCurrentPage(1);
-    setKeyword('');
-  }, [categoryName]);
+    window.scrollTo(0, 0);
+  }, [categoryName, searchParams]); // Run when URL changes
 
   useEffect(() => {
     fetchProducts(keyword, currentPage, activeCategory);
-    window.scrollTo(0, 0);
   }, [keyword, currentPage, activeCategory, fetchProducts]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
-    setKeyword(searchInput);
-    if (activeCategory !== 'All') {
-      setActiveCategory('All');
+    if (searchInput.trim()) {
+      // Update URL to reflect search (good for sharing links)
+      setSearchParams({ keyword: searchInput });
+    } else {
+      // Clear search from URL
+      setSearchParams({});
       navigate('/products');
     }
   };
 
   const handleFilter = (category) => {
-    setCurrentPage(1);
-    setKeyword('');
-    setSearchInput('');
     const categoryPath = category === 'All' ? '' : `/category/${category.replace(/\s+/g, '-').toLowerCase()}`;
     navigate(`/products${categoryPath}`);
   };
 
   const handleResetFilters = () => {
-      setKeyword('');
-      setSearchInput('');
-      handleFilter('All');
+    setSearchParams({}); // Clear query params
+    navigate('/products'); // Go to base products page
   };
 
   return (
     <div className="bg-[#FDFBF7] min-h-screen font-montserrat text-stone-800">
-      
-      <MobileFilterSidebar 
-        isOpen={isFilterOpen} 
-        onClose={() => setIsFilterOpen(false)} 
-        activeCategory={activeCategory} 
-        onSelectCategory={handleFilter} 
+
+      <MobileFilterSidebar
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        activeCategory={activeCategory}
+        onSelectCategory={handleFilter}
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-        
+
         {/* --- Header & Search --- */}
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 border-b border-stone-200 pb-8">
-            <div className="w-full md:w-auto">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700 block mb-2">
-                    {activeCategory === 'All' ? 'Full Collection' : 'Curated Selection'}
-                </span>
-                <h1 className="text-4xl md:text-5xl font-marcellus text-stone-900">
-                    {activeCategory === 'All' ? 'All Products' : activeCategory}
-                </h1>
-            </div>
+          <div className="w-full md:w-auto">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700 block mb-2">
+              {activeCategory === 'All' && !keyword ? 'Full Collection' : 'Filtered Selection'}
+            </span>
+            <h1 className="text-4xl md:text-5xl font-marcellus text-stone-900">
+              {keyword ? `Results for "${keyword}"` : activeCategory === 'All' ? 'All Products' : activeCategory}
+            </h1>
+          </div>
 
-            <div className="w-full md:w-auto flex items-center gap-4">
-                <form onSubmit={handleSearch} className="relative w-full md:w-80">
-                    <input 
-                        type="text" 
-                        value={searchInput} 
-                        onChange={(e) => setSearchInput(e.target.value)} 
-                        placeholder="Search collection..." 
-                        // Changed focus ring color to Teal
-                        className="w-full bg-white border border-stone-200 rounded-sm pl-4 pr-10 py-3 text-sm focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 transition-all placeholder-stone-400 font-light" 
-                    />
-                    <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-teal-700 transition-colors">
-                        <Search size={18} />
-                    </button>
-                </form>
-                
-                <button 
-                    onClick={() => setIsFilterOpen(true)} 
-                    className="lg:hidden flex items-center gap-2 px-4 py-3 bg-white border border-stone-200 rounded-sm text-sm font-bold uppercase tracking-wide hover:bg-stone-50"
-                >
-                    <SlidersHorizontal size={16} /> Filters
-                </button>
-            </div>
+          <div className="w-full md:w-auto flex items-center gap-4">
+            <form onSubmit={handleSearch} className="relative w-full md:w-80">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search collection..."
+                className="w-full bg-white border border-stone-200 rounded-sm pl-4 pr-10 py-3 text-sm focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 transition-all placeholder-stone-400 font-light"
+              />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-teal-700 transition-colors">
+                <Search size={18} />
+              </button>
+            </form>
+
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="lg:hidden flex items-center gap-2 px-4 py-3 bg-white border border-stone-200 rounded-sm text-sm font-bold uppercase tracking-wide hover:bg-stone-50"
+            >
+              <SlidersHorizontal size={16} /> Filters
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
+
           {/* --- DESKTOP SIDEBAR --- */}
           <aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
             <div className="sticky top-24">
@@ -313,14 +318,12 @@ const ProductsPage = () => {
                   <li key={cat}>
                     <button
                       onClick={() => handleFilter(cat)}
-                      className={`text-sm uppercase tracking-widest transition-all duration-300 flex items-center gap-3 w-full text-left group ${
-                        activeCategory === cat 
-                            // Changed active text color to Teal
-                            ? 'font-bold text-teal-700 translate-x-2' 
-                            : 'text-stone-500 hover:text-stone-900 hover:translate-x-1'
-                      }`}
+                      className={`text-sm uppercase tracking-widest transition-all duration-300 flex items-center gap-3 w-full text-left group ${activeCategory === cat && !keyword
+                          ? 'font-bold text-teal-700 translate-x-2'
+                          : 'text-stone-500 hover:text-stone-900 hover:translate-x-1'
+                        }`}
                     >
-                      <span className={`h-[1px] bg-teal-700 transition-all duration-300 ${activeCategory === cat ? 'w-4' : 'w-0 group-hover:w-2'}`}></span>
+                      <span className={`h-[1px] bg-teal-700 transition-all duration-300 ${activeCategory === cat && !keyword ? 'w-4' : 'w-0 group-hover:w-2'}`}></span>
                       {cat}
                     </button>
                   </li>
@@ -332,31 +335,31 @@ const ProductsPage = () => {
           {/* --- PRODUCT GRID --- */}
           <main className="lg:col-span-9 xl:col-span-10 min-h-[50vh]">
             <AnimatePresence mode="wait">
-                {loading ? (
-                    <ProductGridSkeleton />
-                ) : error ? (
-                    <ErrorMessage message={error} />
-                ) : (products?.length || 0) === 0 ? (
-                    <NoResults resetFilters={handleResetFilters} />
-                ) : (
-                    <motion.div 
-                        key="content"
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
-                        transition={{ duration: 0.5 }}
-                    >
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-16">
-                            {products.map((product) => (
-                                <ProductCard key={product._id} product={product} />
-                            ))}
-                        </div>
-                        <Pagination 
-                            currentPage={currentPage} 
-                            totalPages={pages} 
-                            onPageChange={setCurrentPage} 
-                        />
-                    </motion.div>
-                )}
+              {loading ? (
+                <ProductGridSkeleton />
+              ) : error ? (
+                <ErrorMessage message={error} />
+              ) : (products?.length || 0) === 0 ? (
+                <NoResults resetFilters={handleResetFilters} />
+              ) : (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-16">
+                    {products.map((product) => (
+                      <ProductCard key={product._id} product={product} />
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={pages}
+                    onPageChange={setCurrentPage}
+                  />
+                </motion.div>
+              )}
             </AnimatePresence>
           </main>
 

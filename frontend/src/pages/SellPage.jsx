@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  UploadCloud, 
-  X, 
-  Image as ImageIcon, 
-  DollarSign, 
-  MapPin, 
-  Tag, 
-  FileText, 
-  Loader2, 
-  CheckCircle 
+import {
+  UploadCloud,
+  X,
+  Image as ImageIcon,
+  DollarSign,
+  MapPin,
+  Tag,
+  FileText,
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
-import api from '../api/AxiosAPI'; // Assuming you have this set up
+import api from '../api/AxiosAPI';
 
 // --- Configuration ---
 const CATEGORIES = ['Electronics', 'Furniture', 'Vehicles', 'Fashion', 'Hobbies', 'Others'];
@@ -31,7 +31,7 @@ const SellPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -76,24 +76,38 @@ const SellPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation
+    if (images.length === 0) {
+      alert("Please upload at least one image.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     // Create FormData for file upload
     const data = new FormData();
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
+
+    // Append images (Must match backend upload.array('images'))
     images.forEach(image => data.append('images', image));
 
     try {
-      // Simulate API call (Replace with actual API endpoint: await api.post('/products', data))
-      await new Promise(resolve => setTimeout(resolve, 2000)); 
-      
+      // ACTUAL API CALL
+      await api.post('/products', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       setSuccess(true);
       setTimeout(() => {
-        navigate('/products'); // Redirect to listing page after success
+        navigate('/'); // Redirect to Home or Products page
       }, 1500);
     } catch (error) {
       console.error("Error creating listing:", error);
-      alert("Failed to post ad. Please try again.");
+      const errorMsg = error.response?.data?.message || "Failed to post ad. Please try again.";
+      alert(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +116,7 @@ const SellPage = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="text-center"
@@ -118,7 +132,7 @@ const SellPage = () => {
   return (
     <div className="bg-[#FDFBF7] min-h-screen font-montserrat text-stone-800 py-12 md:py-16">
       <div className="container mx-auto px-4 max-w-4xl">
-        
+
         {/* Header */}
         <div className="text-center mb-10" data-aos="fade-down">
           <h1 className="font-marcellus text-4xl md:text-5xl text-stone-900 mb-3">Sell an Item</h1>
@@ -129,19 +143,19 @@ const SellPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* --- Left Column: Image Upload --- */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-6 rounded-sm border border-stone-200 shadow-sm">
               <InputLabel icon={ImageIcon} label="Photos" required />
-              
+
               {/* Dropzone */}
               <div className="border-2 border-dashed border-stone-300 rounded-sm bg-stone-50 hover:bg-teal-50 hover:border-teal-300 transition-colors cursor-pointer relative aspect-square flex flex-col items-center justify-center text-center p-4 group">
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
-                  onChange={handleImageChange} 
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
@@ -157,7 +171,7 @@ const SellPage = () => {
                 <div className="grid grid-cols-3 gap-2 mt-4">
                   <AnimatePresence>
                     {previews.map((src, index) => (
-                      <motion.div 
+                      <motion.div
                         key={index}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -165,7 +179,7 @@ const SellPage = () => {
                         className="relative aspect-square rounded-sm overflow-hidden border border-stone-200 group"
                       >
                         <img src={src} alt="Preview" className="w-full h-full object-cover" />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => removeImage(index)}
                           className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
@@ -193,7 +207,7 @@ const SellPage = () => {
           {/* --- Right Column: Item Details --- */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 md:p-8 rounded-sm border border-stone-200 shadow-sm">
-              
+
               {/* Item Name */}
               <div className="mb-6">
                 <InputLabel icon={Tag} label="Listing Title" required />
@@ -277,6 +291,19 @@ const SellPage = () => {
                     className="w-full p-3 bg-stone-50 border border-stone-200 rounded-sm text-stone-800 focus:outline-none focus:border-teal-700 focus:bg-white transition-all text-sm placeholder-stone-400"
                   />
                 </div>
+              </div>
+
+              {/* Phone */}
+              <div className="mb-6">
+                <InputLabel icon={FileText} label="Contact Phone" />
+                <input
+                  type="text"
+                  name="contactPhone"
+                  value={formData.contactPhone}
+                  onChange={handleInputChange}
+                  placeholder="Optional: Enter phone number"
+                  className="w-full p-3 bg-stone-50 border border-stone-200 rounded-sm text-stone-800 focus:outline-none focus:border-teal-700 focus:bg-white transition-all text-sm placeholder-stone-400"
+                />
               </div>
 
               {/* Description */}

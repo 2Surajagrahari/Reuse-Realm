@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const fs = require('fs');
 const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
@@ -19,10 +20,13 @@ connectDB();
 
 const app = express();
 
-
 app.use(cors());
-
 app.use(express.json());
+
+const uploadDir = path.join(__dirname, '/uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -34,10 +38,9 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 
-//for testing
 app.get('/', (req, res) => {
     res.send('API is running successfully...');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));

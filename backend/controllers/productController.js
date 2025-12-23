@@ -1,14 +1,12 @@
 const Product = require('../models/Product.js');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
 
-
-//@desc    Fetch all products with search, category filter, and pagination
-//@route   GET /api/products
 const getProducts = async (req, res) => {
     try {
-        const pageSize = 9;
+        const pageSize = 12;
         const page = Number(req.query.page) || 1;
 
-        // search keyword ---
         const keyword = req.query.keyword
             ? {
                 name: {
@@ -18,17 +16,16 @@ const getProducts = async (req, res) => {
             }
             : {};
 
-        //category filter 
         const category = req.query.category && req.query.category !== 'All'
             ? { category: req.query.category }
             : {};
 
-        //combine filters
         const filter = { ...keyword, ...category };
 
         const count = await Product.countDocuments(filter);
 
         const products = await Product.find(filter)
+            .sort({ createdAt: -1 })
             .limit(pageSize)
             .skip(pageSize * (page - 1));
 
@@ -38,11 +35,9 @@ const getProducts = async (req, res) => {
     }
 };
 
-//@desc    Fetch a single product by ID
-//@route   GET /api/products/:id
 const getProductById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id).populate('user', 'name email');
         if (product) {
             res.json(product);
         }
@@ -55,28 +50,61 @@ const getProductById = async (req, res) => {
     }
 };
 
-/**
- * @desc    Create a product
- * @route   POST /api/products
- * @access  Private/Admin
- */
 const createProduct = async (req, res) => {
-    const product = new Product({
-        name: 'Sample Product',
-        description: 'Sample Description',
-        basePrice: 0,
-        category: 'Sample Category',
-        imageUrl: '/images/sample.jpg',
-        customizations: [],
-    });
+    try {
+        const {
+            name,
+            description,
+            category,
+            condition,
+            price,
+            location,
+            contactPhone
+        } = req.body;
 
-    const createdProduct = await product.save();
-    res.status(201).json(createdProduct);
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: 'Please upload at least one image' });
+        }
+
+        const imageUrls = [];
+        for (const file of req.files) {
+            const result = await cloudinary.uploader.upload(file.path, {
+                folder: 'rely-tailors/products',
+            });
+            imageUrls.push(result.secure_url);
+
+            try {
+                fs.unlinkSync(file.path);
+            } catch (error) {
+                console.error('Error deleting local file:', error);
+            }
+        }
+
+        const product = new Product({
+            user: req.user._id,
+            name,
+            description,
+            basePrice: Number(price),
+            category,
+            condition,
+            location,
+            contactPhone,
+            images: imageUrls,
+            imageUrl: imageUrls[0],
+            customizations: [],
+            numReviews: 0,
+            rating: 0
+        });
+
+        const createdProduct = await product.save();
+        res.status(201).json(createdProduct);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message || 'Product creation failed' });
+    }
 };
 
-//  @desc    Update a product
-// @route   PUT /api/products/:id
-// @access  Private/Admin
 const updateProduct = async (req, res) => {
     const { name, description, basePrice, category, imageUrl, customizations } = req.body;
     const product = await Product.findById(req.params.id);
@@ -97,10 +125,6 @@ const updateProduct = async (req, res) => {
     }
 };
 
-
-//@desc    Delete a product
-//@route   DELETE /api/products/:id
-//@access  Private/Admin
 const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (product) {
@@ -111,12 +135,6 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-
-/**
- * @desc    Create a new review
- * @route   POST /api/products/:id/reviews
- * @access  Private
- */
 const createProductReview = async (req, res) => {
     const { rating, comment } = req.body;
     const product = await Product.findById(req.params.id);
@@ -151,4 +169,11 @@ const createProductReview = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, };
+module.exports = {
+    getProducts,
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createProductReview
+};
